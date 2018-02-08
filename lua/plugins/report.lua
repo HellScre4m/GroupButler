@@ -18,7 +18,7 @@ local function report(msg, description)
 	local text = i18n(
 		'• <b>Message reported by</b>: %s (<code>%d</code>)'):format(u.getname_final(msg.from), msg.from.id)
 	local chat_link = db:hget('chat:'..msg.chat.id..':links', 'link')
-	if msg.reply.forward_from or msg.reply.forward_from_chat or msg.reply.sticker then
+	if msg.reply and (msg.reply.forward_from or msg.reply.forward_from_chat or msg.reply.sticker) then
 		text = text..i18n(
 			'\n• <b>Reported message sent by</b>: %s (<code>%d</code>)'
 			):format(u.getname_final(msg.reply.from), msg.reply.from.id)
@@ -49,7 +49,7 @@ local function report(msg, description)
 	for i=1, #admins_list do
 		local receive_reports = db:hget('user:'..admins_list[i]..':settings', 'reports')
 		if receive_reports and receive_reports == 'on' then
-			local res_fwd = api.forwardMessage(admins_list[i], msg.chat.id, msg.reply.message_id)
+			local res_fwd = api.forwardMessage(admins_list[i], msg.chat.id, (msg.reply and msg.reply.message_id) or msg.message_id)
 			if res_fwd then
 				markup.inline_keyboard[1][1].callback_data = callback_data..(msg.message_id)
 				desc_msg = api.sendMessage(admins_list[i], text, 'html', markup, res_fwd.result.message_id)
@@ -102,8 +102,8 @@ function plugin.onTextMessage(msg, blocks)
 			api.sendReply(msg, text, true)
 		else
 			if msg.from.admin
-				or not msg.reply
-				or u.is_mod(msg.chat.id, msg.reply.from.id) then
+				--or not msg.reply
+				or msg.reply and u.is_mod(msg.chat.id, msg.reply.from.id) then
 				return
 			end
 
@@ -122,7 +122,7 @@ Wait other %d minutes, %d seconds.]]):format(times_allowed, (duration / 60), min
 				api.sendReply(msg, text, true)
 			else
 				local description
-				if blocks[1] and blocks[1] ~= '@admin' and blocks[1] ~= config.cmd..'report' then
+				if blocks[1] and blocks[1] ~= '[!/@]?admin' and blocks[1] ~= config.cmd..'report' then
 					description = blocks[1]
 				end
 
@@ -196,8 +196,8 @@ end
 
 plugin.triggers = {
 	onTextMessage = {
-		'^@admin$',
-		'^@admin (.+)',
+		'^[!/@]admin$',
+		'^[!/@]admin (.+)',
 		config.cmd..'report$',
 		config.cmd..'report (.+)',
 		config.cmd..'(reportflood) (%d+)[%s/:](%d+)'

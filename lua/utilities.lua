@@ -345,21 +345,23 @@ function utilities.resolve_user(username)
 	username = username:lower()
 
 	local stored_id = tonumber(db:hget('bot:usernames', username))
-	if not stored_id then return false end
-	local user_obj = api.getChat(stored_id)
-	if not user_obj then
-		return stored_id
-	else
-		if not user_obj.result.username then return stored_id end
+	if not stored_id then
+		local user_obj = api.getChat(username)
+		if user_obj and user_obj.result then
+			db:hset('bot:usernames', user_obj.result.username:lower(), user_obj.result.id)
+			return user_obj.result.id
+		end
+		return false
 	end
-
+	local user_obj = api.getChat(stored_id)
+	if not (user_obj and user_obj.result and user_obj.result.username) then return stored_id
 	-- User could change his username
-	if username ~= '@' .. user_obj.result.username:lower() then
+	elseif username ~= '@' .. user_obj.result.username:lower() then
 		if user_obj.result.username then
 			-- Update it if it exists
 			db:hset('bot:usernames', user_obj.result.username:lower(), user_obj.result.id)
+			return result.username:lower()
 		end
-		-- And return false because this user not the same that asked
 		return false
 	end
 
@@ -461,6 +463,10 @@ function utilities.get_media_id(msg)
 		return msg.voice.file_id, 'voice'
 	elseif msg.sticker then
 		return msg.sticker.file_id
+	elseif msg.document then
+		return msg.document.file_id
+	elseif msg.video_note then
+		return msg.video_note.file_id
 	else
 		return false, 'The message has not a media file_id'
 	end
@@ -513,14 +519,18 @@ end
 
 -- Return user mention for output a text
 function utilities.getname_final(user)
-	return utilities.getname_link(user.first_name, user.username) or '<code>'..user.first_name:escape_html()..'</code>'
+	return utilities.getname_link(user.first_name, user.username, user.id) or '<code>'..user.first_name:escape_html()..'</code>'
 end
 
 -- Return link to user profile or false, if he doesn't have login
-function utilities.getname_link(name, username)
-	if not name or not username then return nil end
-	username = username:gsub('@', '')
-	return ('<a href="%s">%s</a>'):format('https://telegram.me/'..username, name:escape_html())
+function utilities.getname_link(name, username, user_id)
+	if not name or not (username or user_id) then return nil end
+	if username then 
+		username = username:gsub('@', '')
+		return ('<a href="%s">%s</a>'):format('https://telegram.me/'..username, name:escape_html())
+	elseif user_id then
+		return ('<a href="%s">%s</a>'):format('tg://user?id='..user_id, name:escape_html())
+	end
 end
 
 function utilities.bash(str)
@@ -793,11 +803,11 @@ end
 function utilities.getnames_complete(msg)
 	local admin, kicked
 
-	admin = utilities.getname_link(msg.from.first_name, msg.from.username)
+	admin = utilities.getname_link(msg.from.first_name, msg.from.username, msg.from.id)
 		or ("<code>%s</code>"):format(msg.from.first_name:escape_html())
 
 	if msg.reply then
-		kicked = utilities.getname_link(msg.reply.from.first_name, msg.reply.from.username)
+		kicked = utilities.getname_link(msg.reply.from.first_name, msg.reply.from.username, msg.reply.from.id)
 			or ("<code>%s</code>"):format(msg.reply.from.first_name:escape_html())
 	elseif msg.text:match(config.cmd..'%w%w%w%w?%w?%s(@[%w_]+)%s?') then
 		local username = msg.text:match('%s(@[%w_]+)')
@@ -805,12 +815,13 @@ function utilities.getnames_complete(msg)
 	elseif msg.mention_id then
 		for _, entity in pairs(msg.entities) do
 			if entity.user then
-				kicked = '<code>'..entity.user.first_name:escape_html()..'</code>'
+				kicked = ('<a href="%s">%s</a>'):format('tg://user?id='..entity.user.id, entity.user.first_name:escape_html())
+				--kicked = '<code>'..entity.user.first_name:escape_html()..'</code>'
 			end
 		end
-	elseif msg.text:match(config.cmd..'%w%w%w%w?%w?%s(%d+)') then
-		local id = msg.text:match(config.cmd..'%w%w%w%w?%w?%s(%d+)')
-		kicked = '<code>'..id..'</code>'
+	else
+		local id = msg.text:match(config.cmd..'.+[:%s]+(%d+)')
+		if id then kicked = ('<a href="%s">%s</a>'):format('tg://user?id=' .. id, id) end
 	end
 
 	return admin, kicked
@@ -923,6 +934,15 @@ function utilities.logEvent(event, msg, extra)
 			if extra.hammered then
 				text = text..i18n('\n<b>Action</b>: <i>%s</i>'):format(extra.hammered)
 			end
+		elseif event == 'removewarn' then
+			--WARN REMOVED
+			--admin name formatted: admin
+			--user name formatted: user
+			--user id: user_id
+			text = i18n(
+				'#%s\n• <b>Admin</b>: %s [#id%s]\n• %s\n• <b>User</b>: %s [#id%s]\n'..
+				'• <b>Current warns</b>: <i>%s</i>'
+			):format('WARN_REMOVED', extra.admin, msg.from.id, chat_info, extra.user, tostring(extra.user_id), extra.rem)
 		elseif event == 'nowarn' then
 			--WARNS REMOVED
 			--admin name formatted: admin

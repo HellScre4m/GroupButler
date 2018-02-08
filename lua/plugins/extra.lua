@@ -25,48 +25,49 @@ function plugin.onTextMessage(msg, blocks)
 		if not msg.from.admin then return end
 		if not blocks[2] then return end
 		if not blocks[3] and not msg.reply then return end
-
-			if msg.reply and not blocks[3] then
-				local file_id, media_with_special_method = u.get_media_id(msg.reply)
-				if not file_id then
-					return
-				else
-					local to_save
-					if media_with_special_method then --photo, voices, video need their method to be sent by file_id
-						to_save = '###file_id!'..media_with_special_method..'###:'..file_id
-					else
-						to_save = '###file_id###:'..file_id
+			if msg.reply then
+				if not blocks[3] then
+					local file_id, media_with_special_method = u.get_media_id(msg.reply)
+					if file_id then
+						local to_save
+						if media_with_special_method then --photo, voices, video need their method to be sent by file_id
+							to_save = '###file_id!'..media_with_special_method..'###:'..file_id
+						else
+							to_save = '###file_id###:'..file_id
+						end
+						db:hset('chat:'..msg.chat.id..':extra', blocks[2], to_save)
+						api.sendReply(msg, i18n("This media has been saved as a response to %s"):format(blocks[2]))
+					else blocks[3] = msg.reply.text or msg.reply.caption
 					end
-					db:hset('chat:'..msg.chat.id..':extra', blocks[2], to_save)
-					api.sendReply(msg, i18n("This media has been saved as a response to %s"):format(blocks[2]))
-				end
-		else
-				local hash = 'chat:'..msg.chat.id..':extra'
-				local new_extra = blocks[3]
-				local reply_markup, test_text = u.reply_markup_from_text(new_extra)
-				test_text = test_text:gsub('\n', '')
-
-				local res, code = api.sendReply(msg, test_text:replaceholders(msg), true, reply_markup)
-				if not res then
-					api.sendMessage(msg.chat.id, u.get_sm_error_string(code), true)
-				else
-					db:hset(hash, blocks[2]:lower(), new_extra)
-					local msg_id = res.result.message_id
-				api.editMessageText(msg.chat.id, msg_id, i18n("Command '%s' saved!"):format(blocks[2]))
 				end
 			end
-	elseif blocks[1] == 'extra list' then
+		if blocks[3] then
+			local hash = 'chat:'..msg.chat.id..':extra'
+			local new_extra = blocks[3]
+			local reply_markup, test_text = u.reply_markup_from_text(new_extra)
+			test_text = test_text:gsub('\n', '')
+
+			local res, code = api.sendReply(msg, test_text:replaceholders(msg), true, reply_markup)
+			if not res then
+				api.sendMessage(msg.chat.id, u.get_sm_error_string(code), true)
+			else
+				db:hset(hash, blocks[2]:lower(), new_extra)
+				local msg_id = res.result.message_id
+			api.editMessageText(msg.chat.id, msg_id, i18n("Command '%s' saved!"):format(blocks[2]))
+			end
+		end
+	elseif blocks[1]:match('(extra%s*list)') then
 		local text = u.getExtraList(msg.chat.id)
 			if not msg.from.admin and not is_locked(msg.chat.id) then
 			api.sendMessage(msg.from.id, text)
 		else
 			api.sendReply(msg, text)
 		end
-		elseif blocks[1] == 'extra del' then
+		elseif blocks[1]:match('(extra%s*del)') then
 				if not msg.from.admin then return end
 			local deleted, not_found, found = {}, {}
 			local hash = 'chat:'..msg.chat.id..':extra'
-			for extra in blocks[2]:gmatch('(#[%w_]+)') do
+			for extra in blocks[2]:gmatch('(#.+)') do
 				found = db:hdel(hash, extra)
 				if found == 1 then
 					deleted[#deleted + 1] = extra
@@ -138,12 +139,12 @@ end
 plugin.triggers = {
 	onTextMessage = {
 		config.cmd..'(extra)$',
-		config.cmd..'(extra) (#[%w_]*) (.*)$',
-		config.cmd..'(extra) (#[%w_]*)',
-		config.cmd..'(extra del) (.+)$',
-		config.cmd..'(extra list)$',
-		'^/(start) (-?%d+)_([%w_]+)$',
-		'^(#[%w_]+)$'
+		config.cmd..'(extra) (#.-) (.+)$',
+		config.cmd..'(extra) (#.+)',
+		config.cmd..'(extra%s*del) (#.+)$',
+		config.cmd..'(extra%s*list)$',
+		'^/(start) (-?%d+)_(.+)$',
+		'^(#.+)$'
 	}
 }
 

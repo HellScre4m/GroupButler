@@ -16,19 +16,10 @@ local function ban_bots(msg)
 		if status == 'on' then
 			local users = msg.new_chat_members
 			local n = 0 --bots banned
-			for i=1, #users do
-				if not users[i].last_name and users[i].username and users[i].username:lower():find('bot', -3) then
-					if db:sismember('bot:bots', users[i].id) then
-						api.banUser(msg.chat.id, users[i].id)
-						n = n + 1
-					else
-						local res, code = api.sendChatAction(users[i].id, 'typing')
-						if not res and code == 161 then
-							db:sadd('bot:bots', users[i].id)
-							api.banUser(msg.chat.id, users[i].id)
-							n = n + 1
-						end
-					end
+			for i = 1, #users do
+				if users[i].is_bot == true then
+					api.banUser(msg.chat.id, users[i].id)
+					n = n + 1
 				end
 			end
 			if n == #users then
@@ -57,13 +48,24 @@ local function apply_default_permissions(chat_id, users)
 	local def_permissions = db:hgetall(hash)
 
 	if next(def_permissions) then
-		for i=1, #permissions do
-			if not def_permissions[permissions[i]] then
-			def_permissions[permissions[i]] = config.chat_settings.defpermissions[permissions[i]]
-			end
-		end
+		--for i=1, #permissions do
+			--if not def_permissions[permissions[i]] then
+				--def_permissions[permissions[i]] = config.chat_settings.defpermissions[permissions[i]]
+			--end
+		--end
 
 		for i=1, #users do
+			local chat_member = api.getChatMember(chat_id, users[i].id)
+			for j=1, #permissions do
+				if chat_member.result[permissions[j]] == false then
+					-- the user has already been restricted: just force-restrict this permission 
+					def_permissions[permissions[j]] = false
+				elseif not def_permissions[permissions[j]] then
+					-- no default value set for this permission, use the default in config.lua
+					def_permissions[permissions[j]] = config.chat_settings.defpermissions[permissions[j]]
+				end
+			end
+
 			api.restrictChatMember(chat_id, users[i].id, def_permissions)
 		end
 	end

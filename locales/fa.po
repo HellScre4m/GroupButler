@@ -2719,7 +2719,7 @@ msgstr ""
 #, lua-format
 msgid ""
 "%s <b>banned</b>: reached the max number of warnings (<code>%d/%d</code>)"
-msgstr "%s در گروه مسدود شد: گرفتن حداکثر تعداد اخطار (<code>%d/%d</code>)"
+msgstr "%s در گروه مسدود شد: گرفتن حداکثر تعداد اخطار (<code>%d/%d</code>)‏"
 
 #: plugins/warn.lua:84
 msgid "banned"
@@ -2746,7 +2746,7 @@ msgstr ""
 #: plugins/warn.lua:115
 #, lua-format
 msgid "%s <b>has been warned</b> (<code>%d/%d</code>)"
-msgstr "%s اخطار گرفت (<code>%d/%d</code>)"
+msgstr "%s اخطار گرفت (<code>%d/%d</code>)‏"
 
 #: plugins/warn.lua:142
 msgid "The number of warnings received by this user is already <i>zero</i>"
@@ -2764,7 +2764,7 @@ msgid ""
 "(Admin: %s)"
 msgstr ""
 "\n"
-"(مدیر: %s)"
+"(مدیر: %s)‏"
 
 #: plugins/warn.lua:158
 #, lua-format

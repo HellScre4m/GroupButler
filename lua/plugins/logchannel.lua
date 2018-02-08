@@ -40,6 +40,8 @@ local function get_alert_text(key)
 		return i18n("Log when someone demotes all the moderators with '/modlist -'")
 	elseif key == 'nowarn' then
 		return i18n("Log when an admin removes the warning received by an user")
+	elseif key == 'removewarn' then
+		return i18n("Log when an admin removes a warning received by an user")
 	elseif key == 'report' then
 		return i18n("Log when an user reports a message with the @admin command")
 	else
@@ -67,6 +69,7 @@ local function doKeyboard_logchannel(chat_id)
 		['report'] = i18n('Report'),
 		['warn'] = i18n('Warns'),
 		['nowarn'] = i18n('Warns resets'),
+		['removewarn'] = i18n('Remove a warn'),
 		['new_chat_member'] = i18n('New members'),
 		['mediawarn'] = i18n('Media warns'),
 		['spamwarn'] = i18n('Spam warns'),

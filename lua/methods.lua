@@ -318,9 +318,17 @@ function api.sendMessage(chat_id, text, parse_mode, reply_markup, reply_to_messa
 	end
 
 	local res, code, desc = sendRequest(url)
-
+	
 	if not res and code then --if the request failed and a code is returned (not 403 and 429)
-		log_error('sendMessage', code, {text}, desc)
+		if desc:find('ENTITY_MENTION_USER_INVALID') then
+			local blocks = {text:match('(<a href=%"tg://user%?id=(%d+)%">.+</a>)')}
+			if blocks and blocks[1] and blocks[2] then
+				text = text:gsub(blocks[1]:gsub('%?', '%%?'), '<code>' .. blocks[2] .. '</code>')
+				return api.sendMessage(chat_id, text, parse_mode, reply_markup, reply_to_message_id, link_preview)
+			else log_error('sendMessage', code, {text}, desc)
+			end
+		else log_error('sendMessage', code, {text}, desc)
+		end
 	end
 
 	return res, code --return false, and the code
