@@ -122,7 +122,7 @@ Wait other %d minutes, %d seconds.]]):format(times_allowed, (duration / 60), min
 				api.sendReply(msg, text, true)
 			else
 				local description
-				if blocks[1] and blocks[1] ~= '[!/@]?admin' and blocks[1] ~= config.cmd..'report' then
+				if blocks[1] and not (blocks[1]:match('[!/@]?admin') or blocks[1]:match(config.cmd..'report')) then
 					description = blocks[1]
 				end
 
