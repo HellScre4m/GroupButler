@@ -15,8 +15,9 @@ local _M =
 	-- Getting updates
 	telegram =
 	{
-		token = assert(read_secret('telegram/token') or os.getenv('TG_TOKEN'),
-			'You must export $TG_TOKEN with your Telegram Bot API token'),
+		token = '459167810:AAFiHDtKmGZrtntTVo50LQYAbgGadsbE-38' --assert(read_secret('telegram/token') or os.getenv('TG_TOKEN'),
+			--'You must export $TG_TOKEN with your Telegram Bot API token'),
+			,
 		allowed_updates = os.getenv('TG_UPDATES') or {'message', 'edited_message', 'callback_query'},
 		polling =
 		{
@@ -44,25 +45,31 @@ local _M =
 	{
 		host = os.getenv('REDIS_HOST') or 'localhost',
 		port = os.getenv('REDIS_PORT') or 6379,
-		db = os.getenv('REDIS_DB') or 0
+		db = 15 --os.getenv('REDIS_DB') or 0
 	},
 
 	-- Aesthetic
-	lang = os.getenv('DEFAULT_LANG') or 'en',
+	lang = 'fa' --os.getenv('DEFAULT_LANG') or 'en',
+	,
 	human_readable_version = os.getenv('VERSION') or 'unknown',
-	channel = os.getenv('CHANNEL') or '@groupbutler_beta',
+	channel = '@CafeWerewolf' --os.getenv('CHANNEL') or '@groupbutler_beta',
+	,
 	source_code = os.getenv('SOURCE') or 'https://github.com/RememberTheAir/GroupButler/tree/beta',
-	help_group = os.getenv('HELP_GROUP') or 'telegram.me/GBgroups',
+	help_group = '@CafeWerewolfContactOwnersBot' --os.getenv('HELP_GROUP') or 'telegram.me/GBgroups',
+	,
 
 	-- Core
 	log =
 	{
-		chat = assert(os.getenv('LOG_CHAT'), 'You must export $LOG_CHAT with the numerical ID of the log chat'),
-		admin = assert(os.getenv('LOG_ADMIN'), 'You must export $LOG_ADMIN with your Telegram ID'),
+		chat = -1001211949509 --assert(os.getenv('LOG_CHAT'), 'You must export $LOG_CHAT with the numerical ID of the log chat'),
+		,
+		admin = 543145724 --assert(os.getenv('LOG_ADMIN'), 'You must export $LOG_ADMIN with your Telegram ID'),
+		,
 		stats = os.getenv('LOG_STATS')
 	},
-	superadmins = assert(json.decode(os.getenv('SUPERADMINS')),
-		'You must export $SUPERADMINS with a JSON array containing at least your Telegram ID'),
+	superadmins = --assert(json.decode(os.getenv('SUPERADMINS')),
+		--'You must export $SUPERADMINS with a JSON array containing at least your Telegram ID'),
+		json.decode('[543145724]'),
 	cmd = '^[/!#]',
 	bot_settings = {
 		cache_time = {
@@ -71,7 +78,7 @@ local _M =
 			chat_titles = 18000
 		},
 		report = {
-			duration = 1200,
+			duration = 300,
 			times_allowed = 2
 		},
 		notify_bug = false, -- notify if a bug occurs!
@@ -195,6 +202,7 @@ local _M =
 			['report'] = 'no',
 			['warn'] = 'no',
 			['nowarn'] = 'no',
+			['removewarn'] = 'no',
 			['mediawarn'] = 'no',
 			['spamwarn'] = 'no',
 			['flood'] = 'no',
