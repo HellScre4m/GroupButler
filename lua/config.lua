@@ -69,7 +69,7 @@ local _M =
 	},
 	superadmins = --assert(json.decode(os.getenv('SUPERADMINS')),
 		--'You must export $SUPERADMINS with a JSON array containing at least your Telegram ID'),
-		json.decode('[543145724]'),
+		{543145724},--json.decode('[543145724]'),
 	cmd = '^[/!#]',
 	bot_settings = {
 		cache_time = {
@@ -79,7 +79,7 @@ local _M =
 		},
 		report = {
 			duration = 300,
-			times_allowed = 2
+			times_allowed = 1
 		},
 		notify_bug = false, -- notify if a bug occurs!
 		log_api_errors = true, -- log errors, which happening whilst interacting with the bot api.
