@@ -7,262 +7,131 @@ local i18n = locale.translate
 
 local plugin = {}
 
-local function doKeyboard_pingme(user_id, chat_id, chat_title)
+local function doKeyboard_pingstatus(user_id, chat_id)
 	local keyboard = {}
-	keyboard.inline_keyboard = {{{text = i18n("Register"),  url = u.deeplink_constructor(chat_id, 'pingme_') .. chat_title}}, 
-	{text = i18n("Unregister"),  url = u.deeplink_constructor(chat_id, 'unpingme_') .. chat_title}}
+	keyboard.inline_keyboard = {{{text = i18n("Register"),  url = u.deeplink_constructor(chat_id, 'pingme')}, 
+	{text = i18n("Unregister"),  url = u.deeplink_constructor(chat_id, 'unpingme')}}}
+
+	return keyboard
+end
+
+local function doKeyboard_unpingme(user_id, chat_id)
+	local keyboard = {}
+	keyboard.inline_keyboard = {{{text = i18n("Cancel"),  url = u.deeplink_constructor(chat_id, 'unpingme')}}}
+
+	return keyboard
+end
+
+local function doKeyboard_pingme(user_id, chat_id)
+	local keyboard = {}
+	keyboard.inline_keyboard = {{{text = i18n("Register"),  url = u.deeplink_constructor(chat_id, 'pingme')}}}
 
 	return keyboard
 end
 
 function plugin.onTextMessage(msg, blocks)
 	if msg.chat.type == 'private' then
-		if blocks[1] == 'pingme' then
+		if blocks[2] == 'pingme' then
 			local user_id = msg.from.id
-			local chat_id = blocks[2]
-			local chat_title = blocks[3]
+			local chat_id = blocks[1]
+			local hash = 'chat:' .. chat_id .. ':ping'
+			local chat_title = db:get('chat:' .. chat_id .. ':title') or chat_id
 			local name = msg.from.first_name
-			local hash = 'chat:' .. chat_id .. 'ping'
-			db:hset(hash, user_id, first_name)
-			local text = i8n("You've successfully registered for pingall in %s")
-			local link = db:hget('chat:' .. chat_id .. 'links', 1)
+			db:hset(hash, user_id, name)
+			local text = i18n("You've successfully registered for pingall in %s")
+			local link = db:hget('chat:' .. chat_id .. ':links', 'link')
 			local append
 			if link then
-				append = '<a href="%s">%s</a>':format(link, chat_title)
+				append = ('<a href="%s">%s</a>'):format(link, chat_title)
 			else append = chat_title
 			end
 			text = text:format(append)
-			api.sendMessage(user_id, text, 'html', nil, nil, true)
-		elseif blocks[1] == 'unpingme' then
-			cal user_id = msg.from.id
-			local chat_id = blocks[2]
-			local chat_title = blocks[3]
-			local name = msg.from.first_name
-			local hash = 'chat:' .. chat_id .. 'ping'
-			db:hdel(hash, user_id, first_name)
-			local text = i8n("You've successfully unregistered from pingall in %s")
-			local link = db:hget('chat:' .. chat_id .. 'links', 1)
+			local keyboard = doKeyboard_unpingme(user_id, chat_id)
+			api.sendMessage(user_id, text, 'html', keyboard)
+		elseif blocks[2] == 'unpingme' then
+			local user_id = msg.from.id
+			local chat_id = blocks[1]
+			local hash = 'chat:' .. chat_id .. ':ping'
+			local chat_title = db:get('chat:' .. chat_id .. ':title') or chat_id
+			db:hdel(hash, user_id)
+			local text = i18n("You've successfully unregistered from pingall in %s")
+			local link = db:hget('chat:' .. chat_id .. ':links', 'link')
 			local append
 			if link then
-				append = '<a href="%s">%s</a>':format(link, chat_title)
+				append = ('<a href="%s">%s</a>'):format(link, chat_title)
 			else append = chat_title
 			end
 			text = text:format(append)
-			api.sendMessage(user_id, text, 'html', nil, nil, true)
+			local keyboard = doKeyboard_pingme(user_id, chat_id)
+			api.sendMessage(user_id, text, 'html', keyboard)
 		end
-	else
+	elseif msg.chat.type ~= 'channel' then
+		local chat_id = msg.chat.id
 		if blocks[1] == 'pingstatus' then
-		local text = i8n('What do you want to do?')
-		local keyboard = doKeyboard_pingme(msg.from.id, msg.chat.id, msg.chat.title)
-		api.sendMessage(user_id, text, 'html', keyboard)
-		elseif blocks[1] == 'pingall' then
-		
-		
-		
-		
-		
-		
-		end
-		
-	
-	
-	
-	end
---[[
-	if blocks[1] == 'warnmax' then
-		if not u.is_owner(msg.chat.id, msg.from.id) then return end
-		local new, default, text, key
-		local hash = 'chat:'..msg.chat.id..':warnsettings'
-		if blocks[2] == 'media' then
-			new = blocks[3]
-			default = 2
-			key = 'mediamax'
-			text = i18n("Max number of warnings changed (media).\n")
-		else
-			key = 'max'
-			new = blocks[2]
-			default = 3
-			text = i18n("Max number of warnings changed.\n")
-		end
-		local old = (db:hget(hash, key)) or default
-		db:hset(hash, key, new)
-		text = text .. i18n("*Old* value was %d\n*New* max is %d"):format(tonumber(old), tonumber(new))
-		api.sendReply(msg, text, true)
-		return
-	end
-
-	if blocks[1] == 'cleanwarn' then
-		if not u.is_owner(msg.chat.id, msg.from.id) then return end
-		local reply_markup =
-		{
-			inline_keyboard =
-			{{{text = i18n('Yes'), callback_data = 'cleanwarns:yes'}, {text = i18n('No'), callback_data = 'cleanwarns:no'}}}
-		}
-
-		api.sendMessage(msg.chat.id,
-			i18n('Do you want to continue and reset *all* the warnings received by *all* the users of the group?'),
-			true, reply_markup)
-
-		return
-	end
-	
-	if not msg.reply
-		and (not blocks[2] or (not blocks[2]:match('@[%w_]+$') and not blocks[2]:match('%d+$')
-		and not msg.mention_id)) then
-			
-			api.sendReply(msg, i18n("Reply to an user or mention them by username or numerical ID"))
-			return
-	end
-	local user_id = u.get_user_id(msg, blocks)
-
-	if not user_id then
-			api.sendReply(msg, i18n([[I've never seen this user before.
-This command works by reply, username, user ID or text mention.
-If you're using it by username and want to teach me who the user is, forward me one of his messages]]), true)
-			return
-		end
-	--do not reply when...
-	if (u.is_mod(msg.chat.id, user_id) and not
-		u.is_owner(msg.chat.id, msg.from.id))
-		or user_id == bot.id then
-		return
-	end
-
-	if blocks[1] == 'nowarn' then
-		local removed = forget_user_warns(msg.chat.id, user_id)
-		local admin, user = u.getnames_complete(msg, blocks)
-		local text = i18n(
-			'Done! %s has been forgiven.\n<b>Warns found</b>: <i>normal warns %s, for media %s, spamwarns %s</i>'
-			):format(user, removed.normal or 0, removed.media or 0, removed.spam or 0)
-		api.sendReply(msg, text, 'html')
-		u.logEvent('nowarn', msg, {admin = admin, user = user, user_id = user_id, rem = removed})
-	end
-	if blocks[1] == 'warn' or blocks[1] == 'sw' then
-		local admin, name = u.getnames_complete(msg, blocks)
-		local hash = 'chat:'..msg.chat.id..':warns'
-		local num = db:hincrby(hash, user_id, 1) --add one warn
-		local nmax = (db:hget('chat:'..msg.chat.id..':warnsettings', 'max')) or 3 --get the max num of warnings
-		local text, res, _, motivation, hammer_log
-		num, nmax = tonumber(num), tonumber(nmax)
-		if num >= nmax then
-			local type = (db:hget('chat:'..msg.chat.id..':warnsettings', 'type')) or 'kick'
-			--try to kick/ban
-			text = i18n("%s <b>%s</b>: reached the max number of warnings (<code>%d/%d</code>)")
-			if type == 'ban' then
-				hammer_log = i18n('banned')
-				text = text:format(name, hammer_log, num, nmax)
-				res, _, motivation = api.banUser(msg.chat.id, user_id)
-			elseif type == 'kick' then --kick
-				hammer_log = i18n('kicked')
-				text = text:format(name, hammer_log, num, nmax)
-				res, _, motivation = api.kickUser(msg.chat.id, user_id)
-			elseif type == 'mute' then --kick
-				hammer_log = i18n('muted')
-				text = text:format(name, hammer_log, num, nmax)
-				res, _, motivation = api.muteUser(msg.chat.id, user_id)
-			end
-			--if kick/ban fails, send the motivation
-			if not res then
-				if not motivation then
-					motivation = i18n("I can't kick this user.\n"
-						.. "Probably I'm not an Admin, or the user is an Admin iself")
-				end
-				if num > nmax then db:hset(hash, user_id, nmax) end --avoid to have a number of warnings bigger than the max
-				text = motivation
+			local link = db:hget('chat:' .. msg.chat.id .. ':links', 'link')
+			local text, keyboard
+			if not link then
+				text = i18n('Sorry, link for this group is not set. Ask admins to set it via <code>/setlink</code>')
 			else
-				forget_user_warns(msg.chat.id, user_id)
+				text = i18n('What do you want to do?')
+				keyboard = doKeyboard_pingstatus(msg.from.id, msg.chat.id)
+				db:set('chat:' .. msg.chat.id .. ':title', msg.chat.title)
 			end
-			--if the user reached the max num of warns, kick and send message
-			api.sendReply(msg, text, 'html')
-			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2])
-				or (msg.reply and msg.reply.text) or i18n("Not specified"),
-				admin = admin,
-				user = name,
-				user_id = user_id,
-				hammered = hammer_log,
-				warns = num,
-				warnmax = nmax
-			})
-		else
-			text = i18n("%s <b>has been warned</b> (<code>%d/%d</code>)"):format(name, num, nmax)
-			local keyboard = doKeyboard_warn(user_id)
-			if blocks[1] ~= 'sw' then api.sendMessage(msg.chat.id, text, 'html', keyboard) end
-			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2])
-				or (msg.reply and msg.reply.text) or i18n("Not specified"),
-				warns = num,
-				warnmax = nmax,
-				admin = admin,
-				user = name,
-				user_id = user_id
-			})
+			api.sendMessage(chat_id, text, 'html', keyboard, msg.message_id)
+		elseif blocks[1] == 'pingall' then
+			local link = db:hget('chat:' .. msg.chat.id .. ':links', 'link')
+			if not link then
+				text = i18n('Sorry, link for this group is not set. Ask admins to set it via <code>/setlink</code>')
+				api.sendMessage(chat_id, text, 'html', nil, msg.message_id)
+				return
+			end
+			local lock = db:get('chat:' .. msg.chat.id .. ':ping:lock')
+			local text
+			if lock then
+				text = i18n('Sorry but a <code>/pingall</code> is already in progress for this group')
+			else
+				local list = db:hgetall('chat:' .. msg.chat.id .. ':ping')
+				if not list then
+					text = i18n('No one is registered for ping in this group yet! Try <code>/pingme</code> to register')
+				else
+					lock = db:setex('chat:' .. msg.chat.id .. ':ping:lock', 3600, 1)
+					text = i18n('Pinging started. Ack will be sent after completion')
+					api.sendMessage(chat_id, text, 'html', nil, msg.message_id)
+					count = 0
+					link = ('<a href="%s">%s</a>'):format(link, msg.chat.title)
+					local keyboard = doKeyboard_unpingme(k, msg.chat.id)
+					for k,v in pairs(list) do
+						local mention = ('<a href="tg://user?id=%s">%s</a>'):format(k, v)
+						local pvText = i18n("Dear %s You've been pinged in group: %s"):format(mention, link)
+						local res = api.sendMessage(k, pvText, 'html', keyboard, nil, true)
+						if res then count = count + 1 end
+					end
+					text = i18n('Pinging completed. successfully pinged <code>%d</code> people'):format(count)
+					db:del('chat:' .. msg.chat.id .. ':ping:lock')
+				end
+			end
+			api.sendMessage(chat_id, text, 'html', nil, msg.message_id)
 		end
-	end]]
+		
+	
+	
+	
+	end
+
 end
 
-function plugin.onCallbackQuery(msg, blocks)--[[
-	if not u.is_allowed('hammer', msg.chat.id, msg.from) then
-		api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
-	end
+function plugin.onCallbackQuery(msg, blocks)
 
-	if blocks[1] == 'removewarn' then
-		local user_id = blocks[2]
-		if u.is_mod(msg.chat.id, user_id) and not u.is_owner(msg.chat.id, msg.from.id) then
-			api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
-		end
-		local num = db:hincrby('chat:'..msg.chat.id..':warns', user_id, -1) --add one warn
-		local text, nmax
-		if tonumber(num) < 0 then
-			text = i18n("The number of warnings received by this user is already <i>zero</i>")
-			db:hincrby('chat:'..msg.chat.id..':warns', user_id, 1) --restore the previouvs number
-		else
-			nmax = (db:hget('chat:'..msg.chat.id..':warnsettings', 'max')) or 3 --get the max num of warnings
-			text = i18n("<b>Warn removed!</b> (%d/%d)"):format(tonumber(num), tonumber(nmax))
-		end
-		local admin, name = u.getnames_complete(msg, blocks)
-		text = text .. i18n("\n(Admin: %s)"):format(admin)
-		api.editMessageText(msg.chat.id, msg.message_id, text, 'html')
-		u.logEvent('removewarn', msg,
-			{admin = admin, user = name, user_id = user_id, rem = num})
-	end
-	if blocks[1] == 'remwarns' then
-		local user_id = blocks[2]
-		if u.is_mod(msg.chat.id, user_id) and not u.is_owner(msg.chat.id, msg.from.id) then
-			api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
-		end
-		local removed = {
-			normal = db:hdel('chat:'..msg.chat.id..':warns', blocks[2]),
-			media = db:hdel('chat:'..msg.chat.id..':mediawarn', blocks[2]),
-			spam = db:hdel('chat:'..msg.chat.id..':spamwarns', blocks[2])
-		}
-
-		local admin, name = u.getnames_complete(msg, blocks)
-		local text = i18n("The number of warnings received by this user has been <b>reset</b>, by %s"):format(admin)
-		api.editMessageText(msg.chat.id, msg.message_id, text, 'html')
-		u.logEvent('nowarn', msg,
-			{admin = admin, user = name, user_id = user_id, rem = removed})
-	end
-	if blocks[1] == 'cleanwarns' then
-		if blocks[2] == 'yes' then
-			db:del('chat:'..msg.chat.id..':warns')
-			db:del('chat:'..msg.chat.id..':mediawarn')
-			db:del('chat:'..msg.chat.id..':spamwarns')
-			api.editMessageText(msg.chat.id, msg.message_id,
-				i18n('Done. All the warnings of this group have been erased by %s'):format(u.getname_final(msg.from)), 'html')
-		else
-			api.editMessageText(msg.chat.id, msg.message_id, i18n('_Action aborted_'), true)
-		end
-	end]]
 end
 
 plugin.triggers = {
 	onTextMessage = {
 		config.cmd..'(pingstatus)$',
 		config.cmd..'(pingem)%s+(%S+)$',
+		config.cmd..'(pingall)$',
 		config.cmd..'(unpingem)%s+(%S+)$',
-		'^/(start) (-?%d+)_pingme_(.+)$'
-		'^/(start) (-?%d+)_unpingme_(.+)$'
+		'^/start (-?%d+)_(pingme)$',
+		'^/start (-?%d+)_(unpingme)$',
 
 	},
 }
