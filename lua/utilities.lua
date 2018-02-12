@@ -810,8 +810,8 @@ function utilities.getnames_complete(msg)
 		kicked = utilities.getname_link(msg.reply.from.first_name, msg.reply.from.username, msg.reply.from.id)
 			or ("<code>%s</code>"):format(msg.reply.from.first_name:escape_html())
 	elseif msg.text:match(config.cmd..'%w%w%w%w?%w?%s(@[%w_]+)%s?') then
-		local username = msg.text:match('%s@([%w_]+)')
-		kicked = ('<a href="%s">%s</a>'):format('https://telegram.me/'.. username, name:escape_html())
+		local username = msg.text:match('%s(@[%w_]+)')
+		kicked = username
 	elseif msg.mention_id then
 		for _, entity in pairs(msg.entities) do
 			if entity.user then
