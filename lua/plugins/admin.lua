@@ -99,8 +99,6 @@ local function get_chat_id(msg)
 end
 
 function plugin.onTextMessage(msg, blocks)
-	if not u.is_superadmin(msg.from.id) then return end
-
 	for i=1, #triggers2 do
 		blocks = match_pattern(triggers2[i], msg.text)
 		if blocks then break end
