@@ -26,7 +26,7 @@ local function removeLane(lane, index)
 	lanesRepo[index] = nil
 	lastUpdates[index] = nil
 	local update = {code = 'cancel'}
-	linda:send(index, update)
+	linda:send(nil, index, update)
 	print(clr.red..'Lane removed...'..clr.reset)
 end
 
@@ -51,6 +51,7 @@ local function init_lanes()
 	end
 	lanes = lanes.gen('*', opt_table, laneFunction)
 	addLane()
+	linda:receive(1, 'dummy')
 end
 
 init_lanes()
@@ -110,7 +111,9 @@ function processUpdate(update)
 	container.content = update
 	local tries = 0
 	while true do
+		local count = 0
 		for k,v in pairs(lanesRepo) do
+			count = count + 1
 			if v.status == 'waiting' then
 				linda:send (nil, k, container)
 				lastUpdates[k] = os.time()
@@ -127,8 +130,9 @@ function processUpdate(update)
 			end
 		end
 		tries = tries + 1
-		if tries == 49 then
-			addLane()
+		linda:receive(0.01, 'dummy')
+		if tries == 32 - count then
+			if count < 32 then addLane() end
 			tries = 0
 		end
 	end
