@@ -103,37 +103,93 @@ function plugin.onTextMessage(msg, blocks)
 					for k,v in pairs(list) do
 						local mention = ('<a href="tg://user?id=%s">%s</a>'):format(k, v)
 						local pvText = i18n("Dear %s You've been pinged in group: %s"):format(mention, link)
-						local res = api.sendMessage(k, pvText, 'html', keyboard, nil, true)
-						if res then count = count + 1 end
+						local res = api.sendMessage(k, pvText, 'html', keyboard)
+						if res then count = count + 1
+						else db:hdel('chat:' .. msg.chat.id .. ':ping', k)
+						end
 					end
 					text = i18n('Pinging completed. successfully pinged <code>%d</code> people'):format(count)
 					db:del('chat:' .. msg.chat.id .. ':ping:lock')
 				end
 			end
 			api.sendMessage(chat_id, text, 'html', nil, msg.message_id)
+		elseif blocks[1] == 'pingem' and u.is_mod(chat_id , msg.from.id) then
+			local user_id, err = u.get_user_id(msg, blocks)
+			if not user_id and err then
+				api.sendMessage(chat_id, err, 'html', nil, msg.message_id)
+			else
+				local hash = 'chat:' .. chat_id .. ':ping'
+				local name = db:hget(hash, user_id)
+				if name then 
+					text = 'They are in ping list already'
+				else
+					name = (msg.reply and msg.reply.from.first_name) or blocks[2]
+					text = ('%s Successfully added to ping list'):format(u.getname_link(name, nil, user_id))
+					db:hset(hash, user_id, name)
+				end
+				api.sendMessage(chat_id, text, 'html', nil, msg.message_id)
+			end
+		elseif blocks[1] == 'unpingem' and u.is_mod(chat_id , msg.from.id) then
+			local user_id, err = u.get_user_id(msg, blocks)
+			if not user_id and err then
+				api.sendMessage(chat_id, err, 'html', nil, msg.message_id)
+			else
+				local hash = 'chat:' .. chat_id .. ':ping'
+				local name = db:hget(hash, user_id)
+				local text
+				if not name then
+					text = 'They are not in ping list already'
+				else
+					text = ('%s Successfully removed from ping list'):format(u.getname_link(name, nil, user_id))
+					hash = 'chat:' .. chat_id .. ':ping'
+					db:hdel(hash, user_id)
+				end
+				api.sendMessage(chat_id, text, 'html', nil, msg.message_id)	
+			end
+		elseif blocks[1] == 'clearpinglist' and u.is_allowed('hammer', chat_id, msg.from) then
+			local text = 'Do you really want to clean pinglist for this group?'
+			local keyboard =
+			{
+				inline_keyboard =
+				{{{text = i18n('Yes'), callback_data = 'cleanpinglist:yes'}, {text = i18n('No'), callback_data = 'cleanpinglist:no'}}}
+			}
+			api.sendMessage(chat_id, text, 'html', keyboard, msg.message_id)
 		end
-		
-	
-	
-	
 	end
-
 end
 
 function plugin.onCallbackQuery(msg, blocks)
-
+	if not u.is_allowed('hammer', msg.chat.id, msg.from) then
+		api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
+	end
+	if blocks[1] == 'cleanpinglist' then
+		if blocks[2] == 'yes' then
+			db:del('chat:' .. msg.chat.id .. ':ping')
+			api.editMessageText(msg.chat.id, msg.message_id,
+				i18n('Done. Ping list for this group is cleaقed by %s'):format(u.getname_final(msg.from)), 'html')
+		else
+			api.editMessageText(msg.chat.id, msg.message_id, i18n('_Action aborted_'), 'html')
+		end
+	end
 end
 
 plugin.triggers = {
 	onTextMessage = {
 		config.cmd..'(pingstatus)$',
 		config.cmd..'(pingem)%s+(%S+)$',
+		config.cmd..'(pingem)$',
 		config.cmd..'(pingall)$',
 		config.cmd..'(unpingem)%s+(%S+)$',
+		config.cmd..'(unpingem)$',
+		config.cmd..'(clearpinglist)$',
+		'^/start (-?%d+)_(pingme)$',
 		'^/start (-?%d+)_(pingme)$',
 		'^/start (-?%d+)_(unpingme)$',
 
 	},
+	onCallbackQuery = {
+		'^###cb:(cleanpinglist):(%w+)$',
+	}
 }
 
 return plugin
