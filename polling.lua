@@ -19,7 +19,10 @@ local function addLane()
 	local lane = lanes(laneIndex)
 	lanesRepo[laneIndex] = lane
 	lastUpdates[laneIndex] = os.time()
+	repeat linda:receive(0.001,'dummmy')
+	until lane.status == 'waiting'
 	print(clr.green..'New lane spawned...'..clr.reset)
+	return lane
 end
 
 local function removeLane(lane, index)
