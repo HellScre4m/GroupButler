@@ -54,7 +54,6 @@ local function init_lanes()
 	end
 	lanes = lanes.gen('*', opt_table, laneFunction)
 	addLane()
-	linda:receive(1, 'dummy')
 end
 
 init_lanes()
