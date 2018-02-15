@@ -22,7 +22,7 @@ local function addLane()
 	repeat linda:receive(0.001,'dummmy')
 	until lane.status == 'waiting'
 	print(clr.green..'New lane spawned...'..clr.reset)
-	return lane
+	return lane, laneIndex
 end
 
 local function removeLane(lane, index)
@@ -128,7 +128,7 @@ function processUpdate(update)
 			elseif v.status == 'error' then
 				_, err = v:join()
 				print(err)
-				removeLane(k, v)
+				removeLane(v, k)
 			end
 		end
 		tries = tries + 1
