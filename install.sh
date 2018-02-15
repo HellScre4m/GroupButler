@@ -5,7 +5,7 @@ LUA=5.2
 
 # Dependencies and libraries
 NATIVE="luarocks lua$LUA liblua$LUA-dev git make unzip redis-server curl libcurl4-gnutls-dev"
-ROCKS="luasocket luasec redis-lua lua-term serpent lua-cjson Lua-cURL lanes"
+ROCKS="luasocket luasec redis-lua lua-term serpent lua-cjson Lua-cURL lanes chronos"
 
 # Color variables
 Red='\033[0;31m'
