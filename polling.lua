@@ -12,7 +12,7 @@ local last_update, last_cron, current
 ----- statistical parallelism variables
 local dop = db:hget('bot:parallelism', 'dop') or 2 -- Degree of parallelism
 local tts = db:hget('bot:parallelism', 'tts') or 0.001 -- Mean time which it takes for main thread to find/allocate a worker thread
-local samples = 128 -- Increasing this value makes statistics less prone to sudden spikes but also less flexible
+local samples = 64 -- Increasing this value makes statistics less prone to sudden spikes but also less flexible
 local nol = 0 -- Number of lanes
 ----- End of statistical parallelism variables
 local lanes = require 'lanes'.configure({nb_keepers = math.floor(dop + 1), verbose_errors = true, with_timers = false})
