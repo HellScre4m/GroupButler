@@ -16,17 +16,17 @@ local samples = 64 -- Increasing this value makes statistics less prone to sudde
 local nol = 0 -- Number of lanes
 ----- End of statistical parallelism variables
 local lanes = require 'lanes'.configure({nb_keepers = math.floor(dop + 1), verbose_errors = true, with_timers = false})
-local linda = lanes.linda()
-local lanesRepo = {}
-local lastUpdates = {}
+local linda = lanes.linda() -- Object to pass data between lanes
+local lanesRepo = {} -- Track lanes with this
+local lastUpdates = {} -- Last time a lane processed an update
 local laneIndex = 0
 
-local function addLane()
+local function addLane() -- This adds a lane
 	laneIndex = laneIndex + 1
 	local lane = lanes(laneIndex)
 	lanesRepo[laneIndex] = lane
 	lastUpdates[laneIndex] = os.time()
-	repeat linda:receive(0.001, 'dummy')
+	repeat linda:receive(0.001, 'dummy') -- Wait until lane init ends, sort of busy wait
 	until lane.status == 'waiting'
 	print(clr.green..'New lane spawned...'..clr.reset)
 	nol = nol + 1
@@ -36,44 +36,44 @@ end
 local function removeLane(lane, index)
 	lanesRepo[index] = nil
 	lastUpdates[index] = nil
-	linda:send(nil, index, {code = 'cancel'})
+	linda:send(nil, index, {code = 'cancel'}) -- Send a command to lane so it terminates itself
 	nol = nol - 1
 	print(clr.red..'Lane removed...'..clr.reset)
 end
 
 local function init_lanes()
-	local function laneFunction(index)
+	local function laneFunction(index) -- This is function which each lane executes
 		local config = require 'config'
 		for k,v in pairs(config.plugins) do
 			if v == 'admin' then
 				table.remove(config.plugins, k)
 				break
 			end
-		end
+		end -- Admin commands always will be processed in the main thread, so we don't need this plugin in worker threads
 		local handler = require 'main'
 		handler.linda = linda
-		local alive = true
+		local alive = true -- Keeps lane busy getting updates
 		while alive do
 			local _, update = linda:receive(nil, index)
 			if update.code == 'cancel' then
-				alive = false
+				alive = false -- Kill lane by ending this loop
 			elseif update.code == 'init' then
-				bot.init()
+				bot.init() -- re inits lane without terminating it.
 			else
-				handler.parseMessageFunction(update.content)
-				linda:send(nil, 'ready', index)
+				handler.parseMessageFunction(update.content) -- Process update
+				linda:send(nil, 'ready', index) -- Ack main thread
 			end
 		end
 	end
 	lanes = lanes.gen('*', laneFunction)
-	addLane()
-	linda:send(nil, 'ready', laneIndex)
+	addLane() -- Add first lane
+	linda:send(nil, 'ready', laneIndex) -- First lane is ready to get updates
 end
 
 init_lanes()
 bot = {}
 
-function bot.init(on_reload) -- The function run when the bot is started or reloaded
+function bot.init(on_reload) -- The function runs when the bot is started or reloaded
 	if on_reload then
 		package.loaded.config = nil
 		package.loaded.languages = nil
@@ -114,7 +114,7 @@ local main = require 'main'
 main.linda = linda
 bot.init()
 
-local function maintenance()
+local function maintenance() -- Keep track of lanes, their status and health
 	for i,j in pairs(lanesRepo) do
 		if j.status == 'waiting' and os.time() - lastUpdates[i] > 300 then
 			removeLane(j, i)
@@ -124,7 +124,7 @@ local function maintenance()
 			removeLane(j, i)
 		end
 	end
-	dop = ((samples - 1) * dop + nol) / samples
+	dop = ((samples - 1) * dop + nol) / samples -- Update statistical degree of parallelism
 end
 	
 function processUpdate(update)
@@ -132,7 +132,8 @@ function processUpdate(update)
 		local msg = update.message
 		if u.is_superadmin(msg.from.id) and msg.from.id == msg.chat.id then
 		print('Admin command')
-		-- Messages that super admin sends in PV should always be handled on the main thread.
+		-- Messages that super admin sends in PV should always be handled on the main thread. 
+		-- Why? I thought this is better. You may change this, but also modify admin.lua as I removed first condition
 			main.parseMessageFunction(update)
 			return
 		end
@@ -142,24 +143,24 @@ function processUpdate(update)
 	container.content = update
 	local begintime = chronos.nanotime()
 	while true do
-		local _, index = linda:receive(tonumber(tts), 'ready')
+		local _, index = linda:receive(tonumber(tts), 'ready') -- Which lane is ready to serve?
 		local miss
-		if index then
+		if index then -- If there is any ...
 			local lane = lanesRepo[index]
-			if lane and lane.status == 'waiting' then
+			if lane and lane.status == 'waiting' then -- is it really ready?
 				linda:send(nil, index, container)
 				lastUpdates[index] = os.time()
 				break
-			else miss = true
+			else miss = true -- Ok let's try another lane
 			end
 		end
-		if not miss and nol < math.floor(dop * 1.5) then 
+		if not miss and nol < math.floor(dop * 1.5) then -- Couldn't find proper lane, create one
 			_, index = addLane()
 			linda:send(nil, index, container)
 			break
 		end
 	end
-	tts = math.floor(((samples - 1) * tts + chronos.nanotime() - begintime) * 1000 / samples)  / 1000
+	tts = math.floor(((samples - 1) * tts + chronos.nanotime() - begintime) * 1000 / samples)  / 1000 -- Update tts
 	maintenance()
 end
 
@@ -182,7 +183,7 @@ while true do -- Start a loop while the bot should be running.
 		-- last.h = current.h
 		current.h = 0
 		print(clr.yellow..'Cron...'..clr.reset)
-		db:hmset('bot:parallelism', 'dop', dop, 'tts', tts)
+		db:hmset('bot:parallelism', 'dop', dop, 'tts', tts) -- Write parallelism statistics to redis
 		for i=1, #plugins do
 			if plugins[i].cron then -- Call each plugin's cron function, if it has one.
 				local res2, err = pcall(plugins[i].cron)
