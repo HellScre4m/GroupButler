@@ -67,6 +67,7 @@ local function init_lanes()
 	end
 	lanes = lanes.gen('*', laneFunction)
 	addLane()
+	linda:send(nil, 'ready', laneIndex)
 end
 
 init_lanes()
