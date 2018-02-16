@@ -46,7 +46,7 @@ local function init_lanes()
 		local config = require 'config'
 		for k,v in pairs(config.plugins) do
 			if v == 'admin' then
-				config.plugins[k] = nil
+				table.remove(config.plugins, k)
 				break
 			end
 		end
