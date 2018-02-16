@@ -3,15 +3,13 @@ local clr = require 'term.colors'
 local u = require 'utilities'
 local config = require 'config'
 local db = require 'database'
-local plugins = require 'plugins'
 local locale = require 'languages'
-local _ = locale.translate
 
-local _M = {}
-_M.plugins = plugins
-
+local botInit = bot and bot.init
 bot = api.getMe().result
-if bot.init == nil then -- Seems this is not the main thread
+if botInit then -- This is the main thread
+	bot.init = botInit
+else
 	bot.init = function ()
 		package.loaded.config = nil
 		package.loaded.languages = nil
@@ -19,7 +17,12 @@ if bot.init == nil then -- Seems this is not the main thread
 		package.loaded.methods = nil
 		package.loaded.plugins = nil
 		config = require 'config'
-		config.plugins['admin'] = nil -- We don't need this plugin in worker threads
+		for k,v in pairs(config.plugins) do
+			if v == 'admin' then
+				config.plugins[k] = nil
+				break
+			end
+		end -- We don't need this plugin in worker threads
 		locale = require 'languages'
 		u = require 'utilities'
 		api = require 'methods'
@@ -27,6 +30,10 @@ if bot.init == nil then -- Seems this is not the main thread
 		print('\n'.. clr.blue .. 'Worker thread reloaded' .. clr.reset .. '\n')
 	end
 end
+
+local plugins = require 'plugins'
+local _M = {}
+_M.plugins = plugins
 
 local function extract_usernames(msg)
 	if msg.from then
