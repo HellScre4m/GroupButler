@@ -863,6 +863,8 @@ function utilities.logEvent(event, msg, extra)
 	if not log_id then return end
 	local is_loggable = db:hget('chat:'..msg.chat.id..':tolog', event)
 	if not is_loggable or is_loggable == 'no' then return end
+	
+	if msg.reply then api.forwardMessage(log_id, msg.chat.id, msg.reply.message_id) end
 
 	local text, reply_markup
 
