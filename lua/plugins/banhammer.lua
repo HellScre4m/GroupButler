@@ -38,7 +38,7 @@ local function get_motivation(msg)
 		elseif msg.text:find(config.cmd.."ban %d+ ") or msg.text:find(config.cmd.."kick %d+ ") then
 			return msg.text:match(config.cmd.."ban %d+%s+(.+)") or msg.text:match(config.cmd.."kick %d+%s+(.+)")
 		elseif msg.entities then
-			return msg.text:match(config.cmd.."ban .+%s+(.+)") or msg.text:match(config.cmd.."kick .+%s+(.+)")
+			return msg.text:match(config.cmd.."ban %S-%s+(.+)") or msg.text:match(config.cmd.."kick %S-%s+(.+)")
 		end
 	end
 end
