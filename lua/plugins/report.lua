@@ -197,7 +197,7 @@ end
 plugin.triggers = {
 	onTextMessage = {
 		'^[!/@]admin$',
-		'^[!/@]admin (.+)',
+		'^[!/@]admin%s+(.+)',
 		config.cmd..'report$',
 		config.cmd..'report (.+)',
 		config.cmd..'(reportflood) (%d+)[%s/:](%d+)'
