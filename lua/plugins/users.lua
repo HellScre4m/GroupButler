@@ -276,7 +276,7 @@ function plugin.onCallbackQuery(msg, blocks)
 			text = i18n("%s <b>has been warned</b> (<code>%d/%d</code>)"):format(name, num, nmax)
 			api.editMessageText(msg.chat.id, msg.message_id, text, 'html')
 			u.logEvent('warn', msg, {
-				motivation = blocks[2],
+				motivation = 'inline',
 				warns = num,
 				warnmax = nmax,
 				admin = admin,
