@@ -34,11 +34,11 @@ local function get_motivation(msg)
 			or msg.text:match(("%stempban .+\n(.+)"):format(config.cmd))
 	else
 		if msg.text:find(config.cmd.."ban @%w[%w_]+ ") or msg.text:find(config.cmd.."kick @%w[%w_]+ ") then
-			return msg.text:match(config.cmd.."ban @%w[%w_]+ (.+)") or msg.text:match(config.cmd.."kick @%w[%w_]+ (.+)")
+			return msg.text:match(config.cmd.."ban @%w[%w_]+%s+(.+)") or msg.text:match(config.cmd.."kick @%w[%w_]+%s+(.+)")
 		elseif msg.text:find(config.cmd.."ban %d+ ") or msg.text:find(config.cmd.."kick %d+ ") then
-			return msg.text:match(config.cmd.."ban %d+ (.+)") or msg.text:match(config.cmd.."kick %d+ (.+)")
+			return msg.text:match(config.cmd.."ban %d+%s+(.+)") or msg.text:match(config.cmd.."kick %d+%s+(.+)")
 		elseif msg.entities then
-			return msg.text:match(config.cmd.."ban .+\n(.+)") or msg.text:match(config.cmd.."kick .+\n(.+)")
+			return msg.text:match(config.cmd.."ban .+%s+(.+)") or msg.text:match(config.cmd.."kick .+%s+(.+)")
 		end
 	end
 end
