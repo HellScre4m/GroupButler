@@ -114,8 +114,17 @@ function plugin.onCallbackQuery(msg, blocks)
 		else
 			if blocks[2] == 'unban' or blocks[2] == 'untempban' then
 				local user_id = blocks[3]
-				api.unbanUser(chat_id, user_id)
-				api.answerCallbackQuery(msg.cb_id, i18n("User unbanned!"), true)
+				local result = api.getChatMember(chat_id, user_id)
+				if result.result.status ~= 'kicked' then
+					api.answerCallbackQuery(msg.cb_id, i18n("This user is not banned!"), true)
+				else
+					api.unbanUser(chat_id, user_id)
+					api.answerCallbackQuery(msg.cb_id, i18n("User unbanned!"), true)
+					local admin = u.getname_link(msg.from.first_name, nil, msg.from.id)
+					local kicked = u.getname_link(user_id, nil, user_id)
+					msg.chat.id = chat_id
+					u.logEvent('unban', msg, {motivation = 'log channel inline', admin = admin, user = kicked, user_id = user_id})
+				end
 			end
 		end
 	else
