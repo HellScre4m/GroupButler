@@ -137,8 +137,7 @@ If you're using it by username and want to teach me who the user is, forward me 
 			--if the user reached the max num of warns, kick and send message
 			api.sendReply(msg, text, 'html')
 			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2])
-				or (msg.reply and msg.reply.text) or i18n("Not specified"),
+				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2]),
 				admin = admin,
 				user = name,
 				user_id = user_id,
@@ -151,8 +150,7 @@ If you're using it by username and want to teach me who the user is, forward me 
 			local keyboard = doKeyboard_warn(user_id)
 			if blocks[1] ~= 'sw' then api.sendMessage(msg.chat.id, text, 'html', keyboard) end
 			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2])
-				or (msg.reply and msg.reply.text) or i18n("Not specified"),
+				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2]),
 				warns = num,
 				warnmax = nmax,
 				admin = admin,
