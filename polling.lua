@@ -154,7 +154,7 @@ function processUpdate(update)
 			else miss = true -- Ok let's try another lane
 			end
 		end
-		if not miss and nol < math.floor(dop * 1.5) then -- Couldn't find proper lane, create one
+		if not miss and nol <= math.floor(dop * 1.5) then -- Couldn't find proper lane, create one
 			_, index = addLane()
 			linda:send(nil, index, container)
 			break
