@@ -143,7 +143,7 @@ function processUpdate(update)
 	container.content = update
 	local begintime = chronos.nanotime()
 	while true do
-		local _, index = linda:receive(tonumber(tts), 'ready') -- Which lane is ready to serve?
+		local _, index = linda:receive(math.floor(tts * 1000) / 1000, 'ready') -- Which lane is ready to serve?
 		local miss
 		if index then -- If there is any ...
 			local lane = lanesRepo[index]
@@ -160,7 +160,7 @@ function processUpdate(update)
 			break
 		end
 	end
-	tts = math.floor(((samples - 1) * tts + chronos.nanotime() - begintime) * 1000 / samples)  / 1000 -- Update tts
+	tts = ((samples - 1) * tts + chronos.nanotime() - begintime) / samples -- Update tts
 	maintenance()
 end
 
