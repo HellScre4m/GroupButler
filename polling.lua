@@ -54,14 +54,17 @@ local function init_lanes()
 		handler.linda = linda
 		local alive = true -- Keeps lane busy getting updates
 		while alive do
-			local _, update = linda:receive(nil, index)
-			if update.code == 'cancel' then
-				alive = false -- Kill lane by ending this loop
-			elseif update.code == 'init' then
-				bot.init() -- re inits lane without terminating it.
-			else
-				handler.parseMessageFunction(update.content) -- Process update
-				linda:send(nil, 'ready', index) -- Ack main thread
+			local _, update = linda:receive(10, index)
+			if update then
+				if update.code == 'cancel' then
+					alive = false -- Kill lane by ending this loop
+				elseif update.code == 'init' then
+					bot.init() -- re inits lane without terminating it.
+				else
+					handler.parseMessageFunction(update.content) -- Process update
+					linda:send(nil, 'ready', index) -- Ack main thread
+				end
+			else linda:send(nil, 'ready', index) -- Don't forget me :(
 			end
 		end
 	end
