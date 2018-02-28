@@ -45,7 +45,7 @@ end
 
 function plugin.onTextMessage(msg, blocks)
 	if msg.chat.type ~= 'private' then
-		if u.can(msg.chat.id, msg.from.id, "can_restrict_members") then
+		if msg.from.admin then
 
 			local user_id, error_translation_key = u.get_user_id(msg, blocks)
 
@@ -59,7 +59,7 @@ function plugin.onTextMessage(msg, blocks)
 
 			--print(get_motivation(msg))
 
-			if blocks[1] == 'tempban' then
+			if blocks[1] == 'tempban' and u.can(msg.chat.id, msg.from.id, "can_restrict_members") then
 				local time_value = msg.text:match(("%stempban.*\n"):format(config.cmd).."(%d+)")
 				if time_value then --save the time value passed by the user
 					if tonumber(time_value) > 100 then
@@ -86,7 +86,7 @@ function plugin.onTextMessage(msg, blocks)
 					api.sendMessage(msg.chat.id, i18n("%s kicked %s!"):format(admin, kicked), 'html')
 				end
 			end
-			if blocks[1] == 'ban' then
+			if blocks[1] == 'ban' and u.can(msg.chat.id, msg.from.id, "can_restrict_members") then
 				local res, _, motivation = api.banUser(chat_id, user_id)
 				if not res then
 					if not motivation then
@@ -99,7 +99,7 @@ function plugin.onTextMessage(msg, blocks)
 					api.sendMessage(msg.chat.id, i18n("%s banned %s!"):format(admin, kicked), 'html')
 				end
 			end
-			if blocks[1] == 'fwdban' then
+			if blocks[1] == 'fwdban' and u.can(msg.chat.id, msg.from.id, "can_restrict_members") then
 				if not msg.reply or not msg.reply.forward_from then
 					api.sendReply(msg, i18n("_Use this command in reply to a forwarded message_"), true)
 				else
@@ -117,7 +117,7 @@ function plugin.onTextMessage(msg, blocks)
 					end
 				end
 			end
-			if blocks[1] == 'unban' then
+			if blocks[1] == 'unban' and u.can(msg.chat.id, msg.from.id, "can_restrict_members") then
 				if u.is_admin(chat_id, user_id) then
 					api.sendReply(msg, i18n("_An admin can't be unbanned_"), true)
 				else

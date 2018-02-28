@@ -284,7 +284,7 @@ function plugin.onCallbackQuery(msg, blocks)
 				user_id = user_id
 			})
 		end
-	elseif blocks[1] == 'recache' and msg.from.admin then
+	elseif blocks[1] == 'recache' then
 		local missing_sec = tonumber(db:ttl('cache:chat:'..msg.target_id..':admins') or 0)
 		local wait = 600
 		if config.bot_settings.cache_time.adminlist - missing_sec < wait then
@@ -304,9 +304,6 @@ function plugin.onCallbackQuery(msg, blocks)
 			--api.sendLog('#recache\nChat: '..msg.target_id..'\nFrom: '..msg.from.id)
 		end
 	elseif blocks[1] == 'kick' then
-		if not u.can(msg.chat.id, blocks[2], "can_restrict_members") then
-			api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
-		end
 		local user_id = blocks[2]
 		local chat_id = msg.chat.id
 		local res, _, motivation = api.kickUser(chat_id, user_id)
