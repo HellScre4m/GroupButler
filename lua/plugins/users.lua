@@ -74,7 +74,7 @@ local function get_userinfo(user_id, chat_id)
 	local warns = (db:hget('chat:'..chat_id..':warns', user_id)) or 0
 	local media_warns = (db:hget('chat:'..chat_id..':mediawarn', user_id)) or 0
 	local spam_warns = (db:hget('chat:'..chat_id..':spamwarns', user_id)) or 0
-	return text:format(u.getname_link(tostring(user_id), nil, user_id), warns, media_warns, spam_warns)
+	return text:format(('<code>%s</code>'):format(user_id), warns, media_warns, spam_warns)
 end
 
 function plugin.onTextMessage(msg, blocks)
