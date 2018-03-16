@@ -25,6 +25,20 @@ local function forget_user_warns(chat_id, user_id)
 	return removed
 end
 
+local function get_motivation(msg)
+	if msg.reply then
+		return msg.text:match(config.cmd .. "warn%s+(.+)")
+	else
+		if msg.text:find(config.cmd.."warn%s+@%w[%w_]+%s+") then
+			return msg.text:match(config.cmd.."warn%s+@%w[%w_]+%s+(.+)")
+		elseif msg.text:find(config.cmd.."warn%s+%d+%s+") then
+			return msg.text:match(config.cmd.."warn%s+%d+%s+(.+)")
+		elseif msg.entities then
+			return msg.text:match(config.cmd.."warn%s+%S-%s+(.+)")
+		end
+	end
+end
+
 function plugin.onTextMessage(msg, blocks)
 	if msg.chat.type == 'private'
 	or (msg.chat.type ~= 'private' and not u.is_allowed('hammer', msg.chat.id, msg.from)) then
@@ -137,7 +151,7 @@ If you're using it by username and want to teach me who the user is, forward me 
 			--if the user reached the max num of warns, kick and send message
 			api.sendReply(msg, text, 'html')
 			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2]),
+				motivation = get_motivation(msg),
 				admin = admin,
 				user = name,
 				user_id = user_id,
@@ -150,7 +164,7 @@ If you're using it by username and want to teach me who the user is, forward me 
 			local keyboard = doKeyboard_warn(user_id)
 			if blocks[1] ~= 'sw' then api.sendMessage(msg.chat.id, text, 'html', keyboard) end
 			u.logEvent('warn', msg, {
-				motivation = (blocks[3] ~= '' and blocks[3]) or (blocks[2] ~= '' and blocks[2]),
+				motivation = get_motivation(msg),
 				warns = num,
 				warnmax = nmax,
 				admin = admin,
