@@ -9,7 +9,7 @@ local plugin = {}
 
 function plugin.onTextMessage(msg, blocks)
 	if msg.chat.type == 'private' then return end
-	if not u.is_allowed('texts', msg.chat.id, msg.from) then return end
+	
 
 	local hash = 'chat:'..msg.chat.id..':links'
 	local text
@@ -29,8 +29,7 @@ function plugin.onTextMessage(msg, blocks)
 			end
 			api.sendReply(msg, text, true)
 		end
-	end
-	if blocks[1] == 'setlink' then
+	elseif blocks[1] == 'setlink' and u.is_owner_request(msg) then
 		if blocks[2] and blocks[2] == '-' then
 			db:hdel(hash, 'link')
 			text = i18n("Link *unset*")
