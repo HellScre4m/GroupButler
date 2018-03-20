@@ -578,21 +578,13 @@ function utilities.getAdminlist(chat_id)
 		local s = ' ├ '
 		if admin.status == 'administrator' or admin.status == 'moderator' then
 			name = admin.user.first_name
-			if admin.user.username then
-				name = ('<a href="telegram.me/%s">%s</a>'):format(admin.user.username, name:escape_html())
-			else
-				name = name:escape_html()
-			end
+			name = utilities.getname_link(name, nil, admin.user.id) .. ('   <code>%d</code>'):format(admin.user.id)
 			if count + 1 == #list.result then s = ' └ ' end
 			adminlist = adminlist..s..name..'\n'
 			count = count + 1
 		elseif admin.status == 'creator' then
 			creator = admin.user.first_name
-			if admin.user.username then
-				creator = ('<a href="telegram.me/%s">%s</a>'):format(admin.user.username, creator:escape_html())
-			else
-				creator = creator:escape_html()
-			end
+			creator = utilities.getname_link(creator, nil, admin.user.id) .. ('   <code>%d</code>'):format(admin.user.id)
 		end
 	end
 	if adminlist == '' then adminlist = '-' end
