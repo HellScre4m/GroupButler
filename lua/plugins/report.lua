@@ -49,14 +49,18 @@ local function report(msg, description)
 	for i=1, #admins_list do
 		local receive_reports = db:hget('user:'..admins_list[i]..':settings', 'reports')
 		if receive_reports and receive_reports == 'on' then
-			local res_fwd = api.forwardMessage(admins_list[i], msg.chat.id, (msg.reply and msg.reply.message_id) or msg.message_id)
+			local res_fwd, _, desc = api.forwardMessage(admins_list[i], msg.chat.id, (msg.reply and msg.reply.message_id) or msg.message_id)
 			if res_fwd then
 				markup.inline_keyboard[1][1].callback_data = callback_data..(msg.message_id)
-				desc_msg = api.sendMessage(admins_list[i], text, 'html', markup, res_fwd.result.message_id)
+				desc_msg, _, desc = api.sendMessage(admins_list[i], text, 'html', markup, res_fwd.result.message_id)
 				if desc_msg then
 					db:hset(hash, admins_list[i], desc_msg.result.message_id) --save the msg_id of the msg sent to the admin
 					n = n + 1
 				end
+			else
+				local owner = db:get('cache:chat:' .. msg.chat.id .. ':owner')
+				local text = i18n('<b>Dear owner, problem sending report to your admin</b> <code>%d</code>'):format(admins_list[i]) .. ':\n' .. desc:escape_html()
+				api.sendMessage(owner, text, 'html')
 			end
 		end
 	end
