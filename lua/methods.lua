@@ -331,7 +331,7 @@ function api.sendMessage(chat_id, text, parse_mode, reply_markup, reply_to_messa
 		end
 	end
 
-	return res, code --return false, and the code
+	return res, code, desc --return false, and the code
 
 end
 
@@ -436,7 +436,7 @@ function api.forwardMessage(chat_id, from_chat_id, message_id)
 		log_error('forwardMessage', code, nil, desc)
 	end
 
-	return res, code
+	return res, code, desc
 
 end
 
