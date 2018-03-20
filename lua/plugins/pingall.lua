@@ -10,14 +10,14 @@ local plugin = {}
 local function doKeyboard_pingstatus(user_id, chat_id)
 	local keyboard = {}
 	keyboard.inline_keyboard = {{{text = i18n("Register"),  url = u.deeplink_constructor(chat_id, 'pingme')}, 
-	{text = i18n("Unregister"),  url = u.deeplink_constructor(chat_id, 'unpingme')}}}
+	{text = i18n("Unregister"),  callback_data = 'unpingme:'.. chat_id}}}
 
 	return keyboard
 end
 
 local function doKeyboard_unpingme(user_id, chat_id)
 	local keyboard = {}
-	keyboard.inline_keyboard = {{{text = i18n("Cancel"),  url = u.deeplink_constructor(chat_id, 'unpingme')}}}
+	keyboard.inline_keyboard = {{{text = i18n("Cancel"),  callback_data = 'unpingme:'.. chat_id}}}
 
 	return keyboard
 end
@@ -104,7 +104,12 @@ function plugin.onTextMessage(msg, blocks)
 						local mention = ('<a href="tg://user?id=%s">%s</a>'):format(k, v)
 						local pvText = i18n("Dear %s You've been pinged in group: %s"):format(mention, link)
 						local res = api.sendMessage(k, pvText, 'html', keyboard)
-						if res then count = count + 1
+						if res then
+							count = count + 1
+							local hash = 'user:' .. k .. ':lastping:' .. chat_id
+							local lastMessage = db:get(hash)
+							if lastMessage then api.deleteMessage(k, lastMessage) end
+							db:setex(hash, 3600*48, res.result.message_id)
 						else db:hdel('chat:' .. msg.chat.id .. ':ping', k)
 						end
 					end
@@ -159,6 +164,29 @@ function plugin.onTextMessage(msg, blocks)
 end
 
 function plugin.onCallbackQuery(msg, blocks)
+	if blocks[1] == 'unpingme' then
+		local user_id = msg.from.id
+		local chat_id = blocks[2]
+		local hash = 'chat:' .. chat_id .. ':ping'
+		local chat_title = db:get('chat:' .. chat_id .. ':title') or chat_id
+		local res = db:hdel(hash, user_id)
+		local success = tonumber(res) ~= 0
+		if success then
+			local text = i18n("You've successfully unregistered from <code>/pingall</code> in %s")
+			local link = db:hget('chat:' .. chat_id .. ':links', 'link')
+			local append
+			if link then
+				append = ('<a href="%s">%s</a>'):format(link, chat_title)
+			else append = chat_title
+			end
+			text = text:format(append)
+			local keyboard = doKeyboard_pingme(user_id, chat_id)
+			api.editMessageText(msg.chat.id,  msg.message_id, text, 'html', keyboard)
+		else
+			api.answerCallbackQuery(msg.cb_id, i18n("You are not registered"))
+		end
+		return
+	end
 	if not u.is_allowed('hammer', msg.chat.id, msg.from) then
 		api.answerCallbackQuery(msg.cb_id, i18n("You are not allowed to use this button")) return
 	end
@@ -189,6 +217,8 @@ plugin.triggers = {
 	},
 	onCallbackQuery = {
 		'^###cb:(cleanpinglist):(%w+)$',
+		'^###cb:(pingme):(-%d+):(%d+)$',
+		'^###cb:(unpingme):(-%d+)$',
 	}
 }
 
