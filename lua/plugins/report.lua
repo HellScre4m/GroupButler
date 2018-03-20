@@ -154,7 +154,7 @@ function plugin.onCallbackQuery(msg, blocks)
 			local addressed_by = db:get(hash..':addressed')
 			if not addressed_by then
 				--no one addressed the issue yet
-
+					api.answerCallbackQuery(msg.cb_id, "✅")
 					local name = msg.from.first_name:sub(1, 120)
 					local chats_reached = db:hgetall(hash)
 					if next(chats_reached) then
@@ -169,27 +169,27 @@ function plugin.onCallbackQuery(msg, blocks)
 						api.editMessageReplyMarkup(msg.from.id, msg.message_id, markup)
 					end
 					db:setex(hash..':addressed', 3600*24*2, name)
-					api.answerCallbackQuery(msg.cb_id, "✅")
 			else
 				api.answerCallbackQuery(msg.cb_id, i18n("%s has/will address this report"):format(addressed_by), true, 48 * 3600)
 			end
 		elseif blocks[1] == 'close' then
-			local key = hash .. (':close:%d'):format(msg.from.id)
-			local second_tap = db:get(key)
-			if not second_tap then
-				db:setex(key, 3600*24, 'x')
-				api.answerCallbackQuery(msg.cb_id, i18n(
-					'This button will delete all the reports sent to the other admins. Tap it again to confirm'), true)
-			else
+			--local key = hash .. (':close:%d'):format(msg.from.id)
+			--local second_tap = db:get(key)
+			--if not second_tap then
+			--	db:setex(key, 3600*24, 'x')
+			--	api.answerCallbackQuery(msg.cb_id, i18n(
+			--		'This button will delete all the reports sent to the other admins. Tap it again to confirm'), true)
+			--else
+				local markup = {inline_keyboard={{{text = i18n("(issue closed by you)"), callback_data = "issueclosed"}}}}
+				api.editMessageReplyMarkup(msg.from.id, msg.message_id, markup)
 				local chats_reached = db:hgetall(hash)
 				for user_id, message_id in pairs(chats_reached) do
 					if tonumber(user_id) ~= msg.from.id then
 						api.deleteMessages(user_id, { [1] = message_id, [2] = (tonumber(message_id) - 1) })
 					end
 				end
-				local markup = {inline_keyboard={{{text = i18n("(issue closed by you)"), callback_data = "issueclosed"}}}}
-				api.editMessageReplyMarkup(msg.from.id, msg.message_id, markup)
-			end
+				
+			--end
 		end
 	end
 end
