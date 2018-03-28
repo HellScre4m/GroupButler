@@ -161,6 +161,7 @@ function processUpdate(update)
 			_, index = addLane()
 			linda:send(nil, index, container)
 			break
+		else print(nol, dop, miss) -- Just for debug
 		end
 	end
 	tts = ((samples - 1) * tts + chronos.nanotime() - begintime) / samples -- Update tts
@@ -169,17 +170,25 @@ end
 
 api.firstUpdate()
 while true do -- Start a loop while the bot should be running.
-	local res = api.getUpdates(last_update+1) -- Get the latest updates
-	if res then
-		-- clocktime_last_update = os.clock()
-		for i=1, #res.result do -- Go through every new message.
-			last_update = res.result[i].update_id
-			--print(last_update)
-			current.h = current.h + 1
-			processUpdate(res.result[i])
+	local status, err = pcall(
+	function ()
+		local res = api.getUpdates(last_update+1) -- Get the latest updates
+		if res then
+			-- clocktime_last_update = os.clock()
+			for i=1, #res.result do -- Go through every new message.
+				last_update = res.result[i].update_id
+				--print(last_update)
+				current.h = current.h + 1
+				processUpdate(res.result[i])
+			end
+		else
+			print('Connection error')
 		end
-	else
-		print('Connection error')
+	end)
+	if err then 
+		print(err)
+		api.sendLog(err)
+		if err:match('interrupted') then return end
 	end
 	if last_cron ~= os.date('%H') then -- Run cron jobs every hour.
 		last_cron = os.date('%H')
