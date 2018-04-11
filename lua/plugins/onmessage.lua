@@ -44,7 +44,6 @@ local function is_flooding_funct(msg)
 	end
 
 	local spamkey = 'spam:'..msg.chat.id..':'..msg.from.id
- 
 	local msgs = tonumber(db:get(spamkey)) or 1
 
 	local max_msgs = tonumber(db:hget('chat:'..msg.chat.id..':flood', 'MaxFlood')) or 5

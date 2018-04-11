@@ -1,4 +1,4 @@
-local config = require 'config'
+﻿local config = require 'config'
 local u = require 'utilities'
 local api = require 'methods'
 local db = require 'database'
@@ -121,9 +121,9 @@ function plugin.onTextMessage(msg, blocks)
 				if u.is_admin(chat_id, user_id) then
 					api.sendReply(msg, i18n("_An admin can't be unbanned_"), true)
 				else
-					local result = api.getChatMember(chat_id, user_id)
+					local result = api.getChatMember(chat_id, user_id).result
 					local text
-					if result.result.status ~= 'kicked' then
+					if result.status ~= 'kicked' then
 						text = i18n("This user is not banned!")
 					else
 						api.unbanUser(chat_id, user_id)
